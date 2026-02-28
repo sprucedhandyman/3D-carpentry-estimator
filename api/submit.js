@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
         from: 'Estimator <onboarding@resend.dev>',
-        to: ['sprucedhandyman@gmail.com', 'idcarpentry.3d@gmail.com'],
+        to: ['sprucedhandyman@gmail.com'],
         subject: `New Kitchen Estimate Lead: ${firstName} ${lastName}`,
         html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1C1C1C">
           <div style="background:#1A1814;padding:28px 32px;border-radius:12px 12px 0 0">
@@ -66,7 +66,6 @@ export default async function handler(req, res) {
           name: { first: firstName, last: lastName },
           emails: { items: [{ tag: 'MAIN', email }] },
           phones: phone ? { items: [{ tag: 'MOBILE', phone }] } : undefined,
-          labelKeys: { items: ['custom.estimator-lead'] },
         }
       })
     });
