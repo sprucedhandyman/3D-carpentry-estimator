@@ -26,6 +26,8 @@ export default function App() {
     firstName: "", lastName: "", email: "", phone: "", notes: ""
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const fileRef = useRef();
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -63,6 +65,32 @@ export default function App() {
     if (step === 3) return form.style && form.door;
     if (step === 4) return form.box && form.finish && form.hardware && form.flooring;
     return true;
+  };
+
+
+  const handleSubmit = async () => {
+    if (!form.firstName || !form.email) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    const est = estimate();
+    try {
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          estimateLow: `$${Math.round(est * 0.9).toLocaleString()}`,
+          estimateHigh: `$${Math.round(est * 1.15).toLocaleString()}`,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Submission failed");
+      setSubmitted(true);
+    } catch (e) {
+      setSubmitError("Something went wrong. Please try again or call us directly.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const SelectCard = ({ field, value, label, sub, icon }) => (
@@ -514,11 +542,16 @@ export default function App() {
                     <textarea style={s.textarea} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Islands, appliances, special requests, timeline..." />
                   </div>
 
+                  {submitError && (
+                    <p style={{ color: "#C0392B", fontSize: 13, textAlign: "center", padding: "8px", background: "#FEF0EE", borderRadius: 8 }}>
+                      {submitError}
+                    </p>
+                  )}
                   <button
-                    style={s.submitBtn}
-                    disabled={!form.firstName || !form.email}
-                    onClick={() => setSubmitted(true)}>
-                    Submit My Project Details →
+                    style={{ ...s.submitBtn, opacity: submitting ? 0.7 : 1 }}
+                    disabled={!form.firstName || !form.email || submitting}
+                    onClick={handleSubmit}>
+                    {submitting ? "Submitting..." : "Submit My Project Details →"}
                   </button>
                   <p style={{ fontSize: 11, color: "#B0A898", textAlign: "center", marginTop: 4 }}>
                     We never share your information. No spam, ever.
