@@ -66,16 +66,7 @@ export default async function handler(req, res) {
           name: { first: firstName, last: lastName },
           emails: { items: [{ tag: 'MAIN', email }] },
           phones: phone ? { items: [{ tag: 'MOBILE', phone }] } : undefined,
-          extendedFields: {
-            items: {
-              'custom.estimate-range': `${estimateLow} – ${estimateHigh}`,
-              'custom.kitchen-size': size, 'custom.project-type': type,
-              'custom.design-style': style, 'custom.door-style': door,
-              'custom.box-material': box, 'custom.finish-type': finish,
-              'custom.hardware-style': hardware, 'custom.flooring': flooring,
-              'custom.project-notes': notes || '',
-            }
-          }
+          labelKeys: { items: ['custom.estimator-lead'] },
         }
       })
     });
