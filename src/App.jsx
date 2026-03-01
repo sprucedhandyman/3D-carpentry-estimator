@@ -13,7 +13,7 @@ const PRICING = {
   flooring: { existing: 0, laminate: 1500, lvp: 2500, tile: 3500, hardwood: 5000 },
 };
 
-const MIN_BUDGET = 15000;
+const MIN_BUDGET = 8000;
 
 const fmt = (n) => `$${n.toLocaleString()}`;
 
@@ -26,6 +26,7 @@ export default function App() {
     firstName: "", lastName: "", email: "", phone: "", notes: ""
   });
   const [submitted, setSubmitted] = useState(false);
+  const [duplicate, setDuplicate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const fileRef = useRef();
@@ -217,6 +218,23 @@ export default function App() {
     },
     footer: { textAlign: "center", padding: "24px", color: "#C0B8B0", fontSize: 11, letterSpacing: 2 }
   };
+
+  // Duplicate submission screen
+  if (duplicate) return (
+    <div style={s.wrap}>
+      <div style={{ ...s.hero, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+        <div style={s.glow} />
+        <div style={s.glow2} />
+        <div style={{ fontSize: 48, marginBottom: 28, color: "#B8935A" }}>✦</div>
+        <div style={s.logoLine}>3D Carpentry LLC · Boise, Idaho</div>
+        <h1 style={{ ...s.h1, fontSize: "clamp(28px, 5vw, 48px)" }}>Already On Our List</h1>
+        <p style={s.sub}>Thank you for submitting your inquiry — we already have you in our system and look forward to connecting with you soon.</p>
+        <div style={{ marginTop: 16, padding: "12px 28px", border: "1px solid #3A3530", borderRadius: 50, color: "#6A6260", fontSize: 12, letterSpacing: 2 }}>
+          CUSTOM CABINETRY · KITCHEN REMODELING · BOISE, ID
+        </div>
+      </div>
+    </div>
+  );
 
   // Thank you screen
   if (submitted) return (
@@ -564,9 +582,35 @@ export default function App() {
                 <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, marginBottom: 14, color: "#1A1814" }}>
                   We May Not Be the Best Fit
                 </h3>
-                <p style={{ color: "#666", fontSize: 14, lineHeight: 1.75, marginBottom: 24 }}>
-                  Our custom cabinetry projects typically start at $15,000. For smaller budgets, we'd recommend exploring semi-custom options from IKEA, Home Depot, or a local handyman — they'll serve you well.
+                <p style={{ color: "#666", fontSize: 14, lineHeight: 1.75, marginBottom: 28 }}>
+                  Our custom cabinetry projects typically start at $8,000. For smaller budgets, we recommend reaching out to our trusted local partner — Noah Kramer at Bird Dog Property Maintenance and Remodel. He does great work and may be exactly what you need.
                 </p>
+                <div style={{ background: "#fff", border: "1px solid #E8D8C0", borderRadius: 14, padding: "24px 28px", marginBottom: 24, textAlign: "left" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#F8F0E4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🐦</div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 15, color: "#1A1814" }}>Noah Kramer</div>
+                      <div style={{ fontSize: 13, color: "#B8935A", fontWeight: 500 }}>Bird Dog Property Maintenance & Remodel</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <a href="tel:+12089172922" style={{
+                      flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      background: "#1A1814", color: "#fff", padding: "13px 20px", borderRadius: 50,
+                      textDecoration: "none", fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif"
+                    }}>
+                      📞 Call Noah
+                    </a>
+                    <a href="mailto:Noah@BirdDogPMR.com" style={{
+                      flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      background: "#fff", color: "#1A1814", padding: "13px 20px", borderRadius: 50,
+                      textDecoration: "none", fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                      border: "1px solid #E0DBD5"
+                    }}>
+                      ✉️ Email Noah
+                    </a>
+                  </div>
+                </div>
                 <button style={s.backBtn} onClick={() => setStep(2)}>← Adjust My Selections</button>
               </div>
             )}
