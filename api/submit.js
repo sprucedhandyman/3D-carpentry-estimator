@@ -70,7 +70,14 @@ export default async function handler(req, res) {
       })
     });
 
-    if (!wixRes.ok) { console.error('Wix CRM error:', await wixRes.text()); errors.push('CRM'); }
+    if (!wixRes.ok) {
+      const errText = await wixRes.text();
+      if (errText.includes('DUPLICATE_CONTACT_EXISTS')) {
+        return res.status(200).json({ success: true, duplicate: true });
+      }
+      console.error('Wix CRM error:', errText);
+      errors.push('CRM');
+    }
   } catch (e) { console.error('Wix CRM exception:', e); errors.push('CRM'); }
 
   if (errors.length === 2) return res.status(500).json({ error: 'Submission failed. Please try again.' });
