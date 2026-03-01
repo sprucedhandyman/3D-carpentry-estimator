@@ -13,7 +13,7 @@ const PRICING = {
   flooring: { existing: 0, laminate: 1500, lvp: 2500, tile: 3500, hardwood: 5000 },
 };
 
-const MIN_BUDGET = 8000;
+const MIN_BUDGET = 10000;
 
 const fmt = (n) => `$${n.toLocaleString()}`;
 
@@ -246,7 +246,15 @@ export default function App() {
         <div style={s.logoLine}>3D Carpentry LLC · Boise, Idaho</div>
         <h1 style={{ ...s.h1, fontSize: "clamp(32px, 5vw, 52px)" }}>We've Got Your Details</h1>
         <p style={s.sub}>Our team will review your project and reach out within 1 business day to schedule your free consultation.</p>
-        <div style={{ marginTop: 16, padding: "12px 28px", border: "1px solid #3A3530", borderRadius: 50, color: "#6A6260", fontSize: 12, letterSpacing: 2 }}>
+        <a href="https://3dcarpentryllc.com" style={{
+          display: "inline-block", marginTop: 28, background: "#B8935A", color: "#fff",
+          padding: "15px 38px", borderRadius: 50, fontSize: 14, fontWeight: 600,
+          textDecoration: "none", fontFamily: "'DM Sans', sans-serif",
+          boxShadow: "0 6px 24px rgba(184,147,90,0.35)", letterSpacing: 0.3
+        }}>
+          ← Return to Homepage
+        </a>
+        <div style={{ marginTop: 24, padding: "12px 28px", border: "1px solid #3A3530", borderRadius: 50, color: "#6A6260", fontSize: 12, letterSpacing: 2 }}>
           CUSTOM CABINETRY · KITCHEN REMODELING · BOISE, ID
         </div>
       </div>
