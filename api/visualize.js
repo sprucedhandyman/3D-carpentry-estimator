@@ -18,31 +18,27 @@ export default async function handler(req, res) {
     const prompt = buildPrompt(selections);
     const imageBuffer = Buffer.from(imageBase64, 'base64');
 
+    // Build multipart form data for the v2beta API
     const formData = new FormData();
     formData.append(
-      'init_image',
+      'image',
       new Blob([imageBuffer], { type: 'image/jpeg' }),
       'kitchen.jpg'
     );
-    formData.append('text_prompts[0][text]', prompt);
-    formData.append('text_prompts[0][weight]', '1');
-    formData.append(
-      'text_prompts[1][text]',
-      'blurry, distorted, unrealistic, cartoon, painting, sketch, drawing, watermark, text'
-    );
-    formData.append('text_prompts[1][weight]', '-1');
-    formData.append('image_strength', '0.40');
-    formData.append('cfg_scale', '8');
-    formData.append('steps', '30');
-    formData.append('samples', '1');
+    formData.append('prompt', prompt);
+    formData.append('negative_prompt', 'blurry, distorted, unrealistic, cartoon, painting, sketch, drawing, watermark, text, people, person');
+    formData.append('mode', 'image-to-image');
+    formData.append('strength', '0.65'); // How much to change (0=no change, 1=ignore original)
+    formData.append('output_format', 'jpeg');
 
+    // v2beta Stable Image Core endpoint (replaces deprecated SD1.6)
     const response = await fetch(
-      'https://api.stability.ai/v1/generation/stable-diffusion-v1-6/image-to-image',
+      'https://api.stability.ai/v2beta/stable-image/generate/core',
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${STABILITY_API_KEY}`,
-          Accept: 'application/json',
+          Accept: 'application/json', // Returns base64 image in JSON response
         },
         body: formData,
       }
@@ -56,11 +52,13 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (!data.artifacts || !data.artifacts[0]) {
+    // v2beta returns { image: "<base64>", finish_reason: "SUCCESS", seed: 12345 }
+    if (!data.image) {
+      console.error('No image in response:', JSON.stringify(data));
       return res.status(500).json({ error: 'No image returned from visualization service.' });
     }
 
-    return res.status(200).json({ image: data.artifacts[0].base64 });
+    return res.status(200).json({ image: data.image });
 
   } catch (e) {
     console.error('Visualize exception:', e.message);
@@ -74,7 +72,8 @@ function buildPrompt(selections = {}) {
     'photorealistic',
     'high quality',
     '8k resolution',
-    'interior design',
+    'interior design photo',
+    'bright natural lighting',
   ];
 
   // Cabinet door style
@@ -97,7 +96,7 @@ function buildPrompt(selections = {}) {
   };
   if (styleMap[selections.style]) parts.push(styleMap[selections.style]);
 
-  // Cabinet finish / color
+  // Cabinet finish
   const finishMap = {
     painted: 'painted cabinets, smooth painted finish',
     stained: 'wood stained cabinets, natural wood grain visible',
@@ -107,7 +106,7 @@ function buildPrompt(selections = {}) {
   };
   if (finishMap[selections.finish]) parts.push(finishMap[selections.finish]);
 
-  // Box material (subtle influence on look)
+  // Box material
   if (selections.box === 'solid') parts.push('premium solid wood construction visible');
   if (selections.box === 'plywood') parts.push('quality wood construction');
 
