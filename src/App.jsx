@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 
-const STEPS = ["Start", "Photo", "Project", "Design", "Materials", "Visualize", "Estimate"];
+const STEPS = ["Start", "Photo", "Project", "Design", "Materials", "Estimate"];
 
 const PRICING = {
   size: { small: 8000, medium: 18000, large: 30000, open: 45000 },
@@ -29,48 +29,9 @@ export default function App() {
   const [duplicate, setDuplicate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [visualization, setVisualization] = useState(null);
-  const [visualizing, setVisualizing] = useState(false);
-  const [vizError, setVizError] = useState(null);
-  const [addIsland, setAddIsland] = useState(false);
   const fileRef = useRef();
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const compressImage = (blobUrl) => new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 768;
-      const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * ratio);
-      canvas.height = Math.round(img.height * ratio);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
-    };
-    img.src = blobUrl;
-  });
-
-  const handleVisualize = async () => {
-    setVisualizing(true);
-    setVizError(null);
-    setVisualization(null);
-    try {
-      const imageBase64 = await compressImage(photo);
-      const res = await fetch("/api/visualize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64, selections: { ...form, addIsland } })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Visualization failed");
-      setVisualization(`data:image/png;base64,${data.image}`);
-    } catch (e) {
-      setVizError("Visualization failed. Please try again or skip to your estimate.");
-    } finally {
-      setVisualizing(false);
-    }
-  };
 
   const estimate = () => {
     let total = 0;
@@ -291,7 +252,7 @@ export default function App() {
           textDecoration: "none", fontFamily: "'DM Sans', sans-serif",
           boxShadow: "0 6px 24px rgba(184,147,90,0.35)", letterSpacing: 0.3
         }}>
-          ← Return to Homepage
+          Return to Homepage
         </a>
         <div style={{ marginTop: 24, padding: "12px 28px", border: "1px solid #3A3530", borderRadius: 50, color: "#6A6260", fontSize: 12, letterSpacing: 2 }}>
           CUSTOM CABINETRY · KITCHEN REMODELING · BOISE, ID
@@ -336,7 +297,7 @@ export default function App() {
       {step >= 1 && step <= 4 && (
         <div style={s.container}>
           <div style={s.progress}>
-            {[1,2,3,4,5,6].map(i => (
+            {[1,2,3,4,5].map(i => (
               <div key={i} style={s.dot(step === i, step > i)} />
             ))}
           </div>
@@ -546,7 +507,7 @@ export default function App() {
                 <div style={s.btnRow}>
                   <button style={s.backBtn} onClick={() => setStep(3)}>← Back</button>
                   <button style={s.nextBtn(canNext())} disabled={!canNext()} onClick={() => setStep(5)}>
-                    Visualize My Kitchen →
+                    See My Estimate →
                   </button>
                 </div>
               </>
@@ -555,104 +516,11 @@ export default function App() {
         </div>
       )}
 
-      {/* ── STEP 5: VISUALIZE ── */}
+      {/* ── STEP 5: ESTIMATE + LEAD CAPTURE ── */}
       {step === 5 && (
         <div style={s.container}>
           <div style={s.progress}>
-            {[1,2,3,4,5,6].map(i => (
-              <div key={i} style={s.dot(i === 5, i < 5)} />
-            ))}
-          </div>
-
-          <div style={s.card}>
-            <div style={s.stepTitle}>Visualize Your Kitchen</div>
-            <div style={s.stepSub}>See an AI-generated preview of your kitchen based on your selections. This is a rough concept — your actual results will be even better.</div>
-
-            {/* Island toggle */}
-            <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
-              <button
-                onClick={() => setAddIsland(v => !v)}
-                style={{
-                  padding: "10px 20px", borderRadius: 50, fontSize: 13, fontWeight: 600,
-                  border: addIsland ? "2px solid #B8935A" : "1px solid #E0DBD5",
-                  background: addIsland ? "#FDF7EF" : "#fff",
-                  color: addIsland ? "#B8935A" : "#666",
-                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s"
-                }}>
-                {addIsland ? "✓ Island Added" : "+ Add an Island"}
-              </button>
-              <span style={{ fontSize: 12, color: "#9A9088" }}>Toggle to include a kitchen island in the visualization</span>
-            </div>
-
-            {/* Side-by-side comparison */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-              <div>
-                <div style={{ fontSize: 11, letterSpacing: 3, color: "#9A9088", marginBottom: 8, fontWeight: 600 }}>YOUR KITCHEN</div>
-                <img src={photo} alt="Original kitchen" style={{ width: "100%", borderRadius: 12, objectFit: "cover", aspectRatio: "4/3" }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, letterSpacing: 3, color: "#9A9088", marginBottom: 8, fontWeight: 600 }}>AI VISUALIZATION</div>
-                <div style={{
-                  width: "100%", aspectRatio: "4/3", borderRadius: 12, overflow: "hidden",
-                  background: "#F0EDE8", display: "flex", alignItems: "center", justifyContent: "center",
-                  flexDirection: "column", gap: 10, border: "2px dashed #E0DBD5"
-                }}>
-                  {visualization ? (
-                    <img src={visualization} alt="AI visualization" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : visualizing ? (
-                    <>
-                      <div style={{ fontSize: 28 }}>✨</div>
-                      <div style={{ fontSize: 13, color: "#9A9088", textAlign: "center", padding: "0 16px" }}>Generating your kitchen visualization...</div>
-                      <div style={{ fontSize: 11, color: "#B0A898" }}>This takes about 10–15 seconds</div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 28 }}>🎨</div>
-                      <div style={{ fontSize: 13, color: "#9A9088", textAlign: "center", padding: "0 16px" }}>Your AI visualization will appear here</div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {vizError && (
-              <p style={{ color: "#C0392B", fontSize: 13, textAlign: "center", padding: "8px", background: "#FEF0EE", borderRadius: 8, marginBottom: 16 }}>
-                {vizError}
-              </p>
-            )}
-
-            <button
-              onClick={handleVisualize}
-              disabled={visualizing}
-              style={{
-                width: "100%", background: visualizing ? "#CCC" : "#B8935A", color: "#fff", border: "none",
-                padding: "16px", borderRadius: 12, fontSize: 15, fontWeight: 600,
-                cursor: visualizing ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif",
-                boxShadow: visualizing ? "none" : "0 6px 24px rgba(184,147,90,0.3)",
-                marginBottom: 12, letterSpacing: 0.3
-              }}>
-              {visualizing ? "Generating... Please wait" : visualization ? "✨ Regenerate Visualization" : "✨ Visualize My Kitchen"}
-            </button>
-
-            <p style={{ fontSize: 11, color: "#B0A898", textAlign: "center", marginBottom: 24 }}>
-              AI-generated concept only · Results may vary · Final design determined in consultation
-            </p>
-
-            <div style={s.btnRow}>
-              <button style={s.backBtn} onClick={() => setStep(4)}>← Back</button>
-              <button style={s.nextBtn(true)} onClick={() => setStep(6)}>
-                See My Estimate →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── STEP 6: ESTIMATE + LEAD CAPTURE ── */}
-      {step === 6 && (
-        <div style={s.container}>
-          <div style={s.progress}>
-            {[1,2,3,4,5,6].map(i => (
+            {[1,2,3,4,5].map(i => (
               <div key={i} style={s.dot(false, true)} />
             ))}
           </div>
