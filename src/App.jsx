@@ -226,7 +226,7 @@ export default function App() {
         <div style={s.glow} />
         <div style={s.glow2} />
         <div style={{ fontSize: 48, marginBottom: 28, color: "#B8935A" }}>✦</div>
-        <div style={s.logoLine}>3D Carpentry LLC · Boise, Idaho</div>
+        <div style={s.logoLine}>3D Cabinetry · Boise, Idaho</div>
         <h1 style={{ ...s.h1, fontSize: "clamp(28px, 5vw, 48px)" }}>Already On Our List</h1>
         <p style={s.sub}>Thank you for submitting your inquiry — we already have you in our system and look forward to connecting with you soon.</p>
         <div style={{ marginTop: 16, padding: "12px 28px", border: "1px solid #3A3530", borderRadius: 50, color: "#6A6260", fontSize: 12, letterSpacing: 2 }}>
@@ -243,10 +243,10 @@ export default function App() {
         <div style={s.glow} />
         <div style={s.glow2} />
         <div style={{ fontSize: 48, marginBottom: 28, color: "#B8935A" }}>✦</div>
-        <div style={s.logoLine}>3D Carpentry LLC · Boise, Idaho</div>
+        <div style={s.logoLine}>3D Cabinetry · Boise, Idaho</div>
         <h1 style={{ ...s.h1, fontSize: "clamp(32px, 5vw, 52px)" }}>We've Got Your Details</h1>
         <p style={s.sub}>Our team will review your project and reach out within 1 business day to schedule your free consultation.</p>
-        <a href="https://3dcarpentryllc.com" style={{
+        <a href="https://3dcabinetry.com" style={{
           display: "inline-block", marginTop: 28, background: "#B8935A", color: "#fff",
           padding: "15px 38px", borderRadius: 50, fontSize: 14, fontWeight: 600,
           textDecoration: "none", fontFamily: "'DM Sans', sans-serif",
@@ -270,7 +270,7 @@ export default function App() {
           <div style={s.glow} />
           <div style={s.glow2} />
           <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={s.logoLine}>3D Carpentry LLC · Boise, Idaho</div>
+            <div style={s.logoLine}>3D Cabinetry · Boise, Idaho</div>
             <h1 style={s.h1}>Design Your Dream<br />Kitchen. Instantly.</h1>
             <p style={s.sub}>Upload a photo, make your selections, and get a rough estimate in minutes — no phone call, no pressure.</p>
             <button style={s.startBtn} onClick={() => setStep(1)}>
@@ -628,7 +628,7 @@ export default function App() {
 
       {step > 0 && (
         <div style={s.footer}>
-          3D CARPENTRY LLC · BOISE, IDAHO · CUSTOM CABINETRY & WOODWORK
+          3D CABINETRY · BOISE, IDAHO · CUSTOM CABINETRY & WOODWORK
         </div>
       )}
     </div>

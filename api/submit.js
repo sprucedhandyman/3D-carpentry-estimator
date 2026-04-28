@@ -12,11 +12,23 @@ export default async function handler(req, res) {
   const WIX_API_KEY = process.env.WIX_API_KEY;
   const WIX_SITE_ID = process.env.WIX_SITE_ID;
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'quotes@3dcabinetry.com';
+  const ESTIMATE_INTERNAL_COPY = process.env.ESTIMATE_INTERNAL_COPY || 'quotes@3dcabinetry.com';
+  const RESEND_REPLY_TO = process.env.RESEND_REPLY_TO || ESTIMATE_INTERNAL_COPY;
 
   const errors = [];
 
   // 1. SEND EMAIL VIA RESEND
   try {
+    if (!RESEND_API_KEY) {
+      throw new Error('Missing RESEND_API_KEY');
+    }
+
+    const recipients = [email, ESTIMATE_INTERNAL_COPY]
+      .map((value) => value?.trim().toLowerCase())
+      .filter(Boolean)
+      .filter((value, index, values) => values.indexOf(value) === index);
+
     const rows = [
       ['Kitchen Size', size], ['Project Type', type], ['Design Style', style],
       ['Door Style', door], ['Box Material', box], ['Finish', finish],
@@ -27,7 +39,7 @@ export default async function handler(req, res) {
 
     const htmlBody = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1C1C1C">
       <div style="background:#1A1814;padding:28px 32px;border-radius:12px 12px 0 0">
-        <p style="color:#B8935A;font-size:11px;letter-spacing:4px;margin:0 0 8px">3D CARPENTRY LLC</p>
+        <p style="color:#B8935A;font-size:11px;letter-spacing:4px;margin:0 0 8px">3D CABINETRY</p>
         <h1 style="color:#fff;margin:0;font-size:24px">New Estimate Lead</h1>
       </div>
       <div style="background:#F8F6F3;padding:32px;border-radius:0 0 12px 12px">
@@ -40,7 +52,7 @@ export default async function handler(req, res) {
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:14px">${rows}</table>
         ${notes ? `<div style="margin-top:20px;padding:16px 20px;background:#fff;border-radius:10px;border:1px solid #E8E4DE"><p style="font-size:11px;letter-spacing:3px;color:#888;margin:0 0 8px">NOTES</p><p style="margin:0;color:#333">${notes}</p></div>` : ''}
-        <p style="margin-top:24px;font-size:12px;color:#999;text-align:center">Submitted via estimate.3dcarpentry.com</p>
+        <p style="margin-top:24px;font-size:12px;color:#999;text-align:center">Submitted via estimate.3dcabinetry.com</p>
       </div>
     </div>`;
 
@@ -48,19 +60,31 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
-        from: 'Estimator <onboarding@resend.dev>',
-        to: ['sprucedhandyman@gmail.com'],
+        from: `3D Cabinetry <${RESEND_FROM_EMAIL}>`,
+        to: recipients,
+        reply_to: RESEND_REPLY_TO,
         subject: `New Kitchen Estimate Lead: ${firstName} ${lastName}`,
         html: htmlBody
       })
     });
 
     if (!resendRes.ok) {
-      console.error('Resend error:', await resendRes.text());
+      const resendError = await resendRes.text();
+      console.error('Resend error:', {
+        status: resendRes.status,
+        recipients,
+        from: RESEND_FROM_EMAIL,
+        replyTo: RESEND_REPLY_TO,
+        body: resendError
+      });
       errors.push('Email');
     }
   } catch (e) {
-    console.error('Email exception:', e.message);
+    console.error('Email exception:', {
+      message: e.message,
+      customerEmail: email,
+      internalCopy: ESTIMATE_INTERNAL_COPY
+    });
     errors.push('Email');
   }
 
