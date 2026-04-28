@@ -61,7 +61,7 @@ export default function App() {
   };
 
   const canNext = () => {
-    if (step === 1) return photo !== null;
+    if (step === 1) return true;
     if (step === 2) return form.size && form.type;
     if (step === 3) return form.style && form.door;
     if (step === 4) return form.box && form.finish && form.hardware && form.flooring;
@@ -308,7 +308,7 @@ export default function App() {
             {step === 1 && (
               <>
                 <div style={s.stepTitle}>Upload Your Kitchen Photo</div>
-                <div style={s.stepSub}>A photo of your current space helps us understand your starting point and tailor your estimate.</div>
+                <div style={s.stepSub}>Optional: upload a photo of your current kitchen so we can better understand your space. You can also skip this step and continue to your rough estimate.</div>
                 <div
                   style={s.uploadZone(dragging, !!photo)}
                   onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -336,7 +336,7 @@ export default function App() {
                 </div>
                 <div style={s.btnRow}>
                   <button style={s.backBtn} onClick={() => setStep(0)}>← Back</button>
-                  <button style={s.nextBtn(canNext())} disabled={!canNext()} onClick={() => setStep(2)}>Continue →</button>
+                  <button style={s.nextBtn(canNext())} disabled={!canNext()} onClick={() => setStep(2)}>{photo ? "Continue →" : "Skip & Continue →"}</button>
                 </div>
               </>
             )}
