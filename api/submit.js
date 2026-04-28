@@ -15,6 +15,8 @@ export default async function handler(req, res) {
   const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'quotes@3dcabinetry.com';
   const ESTIMATE_INTERNAL_COPY = process.env.ESTIMATE_INTERNAL_COPY || 'quotes@3dcabinetry.com';
   const RESEND_REPLY_TO = process.env.RESEND_REPLY_TO || ESTIMATE_INTERNAL_COPY;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
   const errors = [];
   const normalizedEmail = email?.trim().toLowerCase();
@@ -130,29 +132,59 @@ export default async function handler(req, res) {
 
   // 2. CREATE WIX CRM CONTACT
   try {
-    const wixRes = await fetch('https://www.wixapis.com/contacts/v4/contacts', {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+      throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
+    }
+
+    const parseEstimate = (value) => {
+      if (!value) return null;
+      const parsed = Number(String(value).replace(/[^0-9.-]/g, ''));
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const leadPayload = {
+      first_name: firstName?.trim(),
+      last_name: lastName?.trim() || null,
+      email: normalizedEmail,
+      phone: phone?.trim() || null,
+      source: 'estimator',
+      status: 'new',
+      project_type: type || null,
+      kitchen_size: size || null,
+      design_style: style || null,
+      door_style: door || null,
+      box_material: box || null,
+      finish: finish || null,
+      hardware: hardware || null,
+      flooring: flooring || null,
+      estimate_low: parseEstimate(estimateLow),
+      estimate_high: parseEstimate(estimateHigh),
+      client_notes: notes?.trim() || null,
+    };
+
+    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': WIX_API_KEY, 'wix-site-id': WIX_SITE_ID },
-      body: JSON.stringify({
-        info: {
-          name: { first: firstName, last: lastName },
-          emails: { items: [{ tag: 'MAIN', email }] },
-          phones: phone ? { items: [{ tag: 'MOBILE', phone }] } : undefined,
-        }
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        Prefer: 'return=representation'
+      },
+      body: JSON.stringify(leadPayload)
     });
 
-    if (!wixRes.ok) {
-      const errText = await wixRes.text();
-      if (errText.includes('DUPLICATE_CONTACT_EXISTS')) {
-        return res.status(200).json({ success: true, duplicate: true });
-      }
-      console.error('Wix CRM error:', errText);
-      errors.push('CRM');
+    if (!supabaseRes.ok) {
+      const errText = await supabaseRes.text();
+      console.error('Supabase lead insert error:', {
+        status: supabaseRes.status,
+        email: normalizedEmail,
+        body: errText
+      });
+      errors.push('Lead');
     }
   } catch (e) {
-    console.error('Wix CRM exception:', e.message);
-    errors.push('CRM');
+    console.error('Lead insert exception:', e.message);
+    errors.push('Lead');
   }
 
   if (errors.length === 2) return res.status(500).json({ error: 'Submission failed. Please try again.' });

@@ -6,8 +6,8 @@
 - `RESEND_FROM_EMAIL=quotes@3dcabinetry.com`
 - `RESEND_REPLY_TO=quotes@3dcabinetry.com`
 - `ESTIMATE_INTERNAL_COPY=quotes@3dcabinetry.com`
-- `WIX_API_KEY`
-- `WIX_SITE_ID`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY`
 - `STABILITY_API_KEY`
 
 ## Email Delivery Notes
@@ -16,6 +16,7 @@ Estimate submissions are sent to:
 
 - the customer email entered in the form
 - `ESTIMATE_INTERNAL_COPY` for the business copy
+- a Supabase `leads` row for CRM tracking
 
 If the send fails, the Vercel function logs:
 
