@@ -6,7 +6,7 @@ const PRICING = {
   style: { modern: 2000, contemporary: 1500, transitional: 1000, traditional: 800, farmhouse: 600 },
   door: { flat: 0, shaker: 800, raised: 1200, glass: 2000, open: -500 },
   box: { particleboard: 0, mdf: 500, plywood: 1500, solid: 3000 },
-  finish: { thermofoil: 0, painted: 800, stained: 1200, natural: 600, twotone: 1500 },
+  finish: { painted: 800, stained: 1200, natural: 600, twotone: 1500 },
   hardware: { minimal: 400, knobs: 300, bar: 600, cup: 700, mixed: 900 },
   flooring: { existing: 0, laminate: 1500, lvp: 2500, tile: 3500, hardwood: 5000 },
 };
@@ -96,7 +96,6 @@ const SECTIONS = [
           ["painted", "Painted"],
           ["stained", "Stained"],
           ["natural", "Natural wood"],
-          ["thermofoil", "Thermofoil"],
           ["twotone", "Two-tone"],
         ],
       },
@@ -174,6 +173,7 @@ export default function App() {
     flooring: "",
     firstName: "",
     lastName: "",
+    companyName: "",
     email: "",
     phone: "",
     notes: "",
@@ -284,6 +284,10 @@ export default function App() {
                   <label className="text-field">
                     <span>Last name</span>
                     <input value={form.lastName} onChange={(event) => set("lastName", event.target.value)} placeholder="Last name" autoComplete="family-name" />
+                  </label>
+                  <label className="text-field">
+                    <span>Company name <em>Optional</em></span>
+                    <input value={form.companyName} onChange={(event) => set("companyName", event.target.value)} placeholder="Company or builder name" autoComplete="organization" />
                   </label>
                   <label className="text-field">
                     <span>Email address *</span>

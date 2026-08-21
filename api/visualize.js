@@ -101,7 +101,6 @@ function buildPrompt(selections = {}) {
     painted: 'painted cabinets, smooth painted finish',
     stained: 'wood stained cabinets, natural wood grain visible',
     natural: 'natural wood cabinets, unfinished wood grain',
-    thermofoil: 'thermofoil cabinet finish, smooth modern surface',
     twotone: 'two-tone kitchen cabinets, contrasting upper and lower cabinet colors',
   };
   if (finishMap[selections.finish]) parts.push(finishMap[selections.finish]);
