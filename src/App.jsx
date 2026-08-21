@@ -1,6 +1,4 @@
-import { useState, useRef } from "react";
-
-const STEPS = ["Start", "Photo", "Project", "Design", "Materials", "Estimate"];
+import { useMemo, useState } from "react";
 
 const PRICING = {
   size: { small: 8000, medium: 18000, large: 30000, open: 45000 },
@@ -13,624 +11,354 @@ const PRICING = {
   flooring: { existing: 0, laminate: 1500, lvp: 2500, tile: 3500, hardwood: 5000 },
 };
 
-const MIN_BUDGET = 10000;
+const SECTIONS = [
+  {
+    eyebrow: "Project scope",
+    title: "Tell us about your kitchen",
+    description: "Start with the size of the space and how much you want to change.",
+    fields: [
+      {
+        key: "size",
+        label: "Kitchen size",
+        placeholder: "Select the closest size",
+        options: [
+          ["small", "Small — under 100 sq ft"],
+          ["medium", "Medium — 100–200 sq ft"],
+          ["large", "Large — 200–300 sq ft"],
+          ["open", "Open concept — 300+ sq ft"],
+        ],
+      },
+      {
+        key: "type",
+        label: "Project type",
+        placeholder: "Select the project scope",
+        options: [
+          ["full", "Full kitchen remodel"],
+          ["refresh", "Cabinet refresh"],
+          ["modernize", "New functionality"],
+          ["layout", "Layout change"],
+        ],
+      },
+    ],
+  },
+  {
+    eyebrow: "Design direction",
+    title: "Choose the look you have in mind",
+    description: "These choices help us understand the level of detail and fabrication involved.",
+    fields: [
+      {
+        key: "style",
+        label: "Design style",
+        placeholder: "Select a design style",
+        options: [
+          ["modern", "Modern"],
+          ["contemporary", "Contemporary"],
+          ["transitional", "Transitional"],
+          ["traditional", "Traditional"],
+          ["farmhouse", "Farmhouse"],
+        ],
+      },
+      {
+        key: "door",
+        label: "Cabinet door style",
+        placeholder: "Select a door style",
+        options: [
+          ["shaker", "Shaker"],
+          ["flat", "Flat panel / slab"],
+          ["raised", "Raised panel"],
+          ["glass", "Glass front"],
+          ["open", "Open shelving"],
+        ],
+      },
+    ],
+  },
+  {
+    eyebrow: "Materials & finishes",
+    title: "Refine the material choices",
+    description: "Choose the closest match. We will confirm exact materials during consultation.",
+    fields: [
+      {
+        key: "box",
+        label: "Cabinet box material",
+        placeholder: "Select a box material",
+        options: [
+          ["plywood", "Plywood"],
+          ["solid", "Solid wood"],
+          ["mdf", "MDF"],
+          ["particleboard", "Particleboard"],
+        ],
+      },
+      {
+        key: "finish",
+        label: "Finish type",
+        placeholder: "Select a finish",
+        options: [
+          ["painted", "Painted"],
+          ["stained", "Stained"],
+          ["natural", "Natural wood"],
+          ["thermofoil", "Thermofoil"],
+          ["twotone", "Two-tone"],
+        ],
+      },
+      {
+        key: "hardware",
+        label: "Hardware style",
+        placeholder: "Select a hardware style",
+        options: [
+          ["minimal", "Minimal / integrated"],
+          ["bar", "Bar pulls"],
+          ["cup", "Cup pulls"],
+          ["knobs", "Knobs"],
+          ["mixed", "Mixed"],
+        ],
+      },
+      {
+        key: "flooring",
+        label: "Flooring",
+        placeholder: "Select a flooring plan",
+        options: [
+          ["existing", "Keep existing"],
+          ["lvp", "LVP"],
+          ["tile", "Tile"],
+          ["hardwood", "Hardwood"],
+          ["laminate", "Laminate"],
+        ],
+      },
+    ],
+  },
+];
 
-const fmt = (n) => `$${n.toLocaleString()}`;
+const ESTIMATE_FIELDS = SECTIONS.flatMap((section) => section.fields.map((field) => field.key));
+const MIN_BUDGET = 10000;
+const fmt = (number) => `$${number.toLocaleString()}`;
+
+function estimateRange(total) {
+  return `${fmt(Math.round(total * 0.9))} – ${fmt(Math.round(total * 1.15))}`;
+}
+
+function CompletionScreen() {
+  return (
+    <main className="completion-screen">
+      <div className="completion-glow" />
+      <div className="brand-line">3D Cabinetry · Boise, Idaho</div>
+      <h1>We’ve got your details.</h1>
+      <p>Our team will review your selections and reach out within one business day to schedule your free consultation.</p>
+      <a href="https://3dcabinetry.com">Return to 3D Cabinetry</a>
+    </main>
+  );
+}
+
+function SelectField({ field, value, onChange }) {
+  return (
+    <label className="select-field">
+      <span>{field.label}</span>
+      <select value={value} onChange={(event) => onChange(field.key, event.target.value)}>
+        <option value="">{field.placeholder}</option>
+        {field.options.map(([optionValue, label]) => (
+          <option key={optionValue} value={optionValue}>{label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 export default function App() {
-  const [step, setStep] = useState(0);
-  const [photo, setPhoto] = useState(null);
-  const [dragging, setDragging] = useState(false);
   const [form, setForm] = useState({
-    size: "", type: "", style: "", door: "", box: "", finish: "", hardware: "", flooring: "",
-    firstName: "", lastName: "", email: "", phone: "", notes: ""
+    size: "",
+    type: "",
+    style: "",
+    door: "",
+    box: "",
+    finish: "",
+    hardware: "",
+    flooring: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    notes: "",
   });
   const [submitted, setSubmitted] = useState(false);
-  const [duplicate, setDuplicate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const fileRef = useRef();
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
-  const estimate = () => {
-    let total = 0;
-    if (form.size) total += PRICING.size[form.size] || 0;
-    if (form.type) total += PRICING.type[form.type] || 0;
-    if (form.style) total += PRICING.style[form.style] || 0;
-    if (form.door) total += PRICING.door[form.door] || 0;
-    if (form.box) total += PRICING.box[form.box] || 0;
-    if (form.finish) total += PRICING.finish[form.finish] || 0;
-    if (form.hardware) total += PRICING.hardware[form.hardware] || 0;
-    if (form.flooring) total += PRICING.flooring[form.flooring] || 0;
-    return total;
-  };
+  const estimate = useMemo(() => ESTIMATE_FIELDS.reduce((total, field) => {
+    const value = form[field];
+    return total + (value ? PRICING[field][value] || 0 : 0);
+  }, 0), [form]);
 
-  const qualified = estimate() >= MIN_BUDGET;
-  const range = () => { const e = estimate(); return `${fmt(Math.round(e * 0.9))} – ${fmt(Math.round(e * 1.15))}`; };
+  const completedCount = ESTIMATE_FIELDS.filter((field) => form[field]).length;
+  const selectionsComplete = completedCount === ESTIMATE_FIELDS.length;
+  const qualified = selectionsComplete && estimate >= MIN_BUDGET;
+  const canSubmit = qualified && form.firstName.trim() && form.email.trim() && !submitting;
 
-  const handleDrop = (e) => {
-    e.preventDefault(); setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) setPhoto(URL.createObjectURL(file));
-  };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!canSubmit) return;
 
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (file) setPhoto(URL.createObjectURL(file));
-  };
-
-  const canNext = () => {
-    if (step === 1) return true;
-    if (step === 2) return form.size && form.type;
-    if (step === 3) return form.style && form.door;
-    if (step === 4) return form.box && form.finish && form.hardware && form.flooring;
-    return true;
-  };
-
-
-  const handleSubmit = async () => {
-    if (!form.firstName || !form.email) return;
     setSubmitting(true);
     setSubmitError(null);
-    const est = estimate();
+
     try {
-      const res = await fetch("/api/submit", {
+      const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          estimateLow: `$${Math.round(est * 0.9).toLocaleString()}`,
-          estimateHigh: `$${Math.round(est * 1.15).toLocaleString()}`,
-        })
+          estimateLow: `$${Math.round(estimate * 0.9).toLocaleString()}`,
+          estimateHigh: `$${Math.round(estimate * 1.15).toLocaleString()}`,
+        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Submission failed");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Submission failed");
       setSubmitted(true);
-    } catch (e) {
+    } catch {
       setSubmitError("Something went wrong. Please try again or call us directly.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const SelectCard = ({ field, value, label, sub, icon }) => (
-    <button onClick={() => set(field, value)} style={{
-      padding: "14px 18px",
-      border: form[field] === value ? "2px solid #B8935A" : "1px solid #E0DBD5",
-      borderRadius: 10,
-      background: form[field] === value ? "#FDF7EF" : "#fff",
-      cursor: "pointer", textAlign: "left", transition: "all 0.2s",
-      color: form[field] === value ? "#B8935A" : "#444",
-      fontFamily: "'DM Sans', sans-serif",
-      display: "flex", flexDirection: "column", gap: 3,
-      width: "100%"
-    }}>
-      {icon && <span style={{ fontSize: 18 }}>{icon}</span>}
-      <span style={{ fontSize: 13, fontWeight: form[field] === value ? 600 : 500 }}>{label}</span>
-      {sub && <span style={{ fontSize: 11, color: form[field] === value ? "#C4A070" : "#999" }}>{sub}</span>}
-    </button>
-  );
-
-  const s = {
-    wrap: { minHeight: "100vh", background: "#F8F6F3", fontFamily: "'DM Sans', sans-serif", color: "#1C1C1C" },
-    hero: {
-      background: "linear-gradient(160deg, #1A1814 0%, #2D2822 60%, #1C1C1C 100%)",
-      padding: "90px 24px 70px", textAlign: "center", position: "relative", overflow: "hidden"
-    },
-    glow: {
-      position: "absolute", top: -80, right: -80, width: 400, height: 400,
-      borderRadius: "50%", background: "radial-gradient(circle, rgba(184,147,90,0.12) 0%, transparent 70%)",
-      pointerEvents: "none"
-    },
-    glow2: {
-      position: "absolute", bottom: -60, left: -60, width: 300, height: 300,
-      borderRadius: "50%", background: "radial-gradient(circle, rgba(184,147,90,0.07) 0%, transparent 70%)",
-      pointerEvents: "none"
-    },
-    logoLine: { color: "#B8935A", fontSize: 11, letterSpacing: 6, textTransform: "uppercase", marginBottom: 20, fontWeight: 500 },
-    h1: {
-      fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(38px, 6vw, 68px)",
-      fontWeight: 600, color: "#fff", lineHeight: 1.08, margin: "0 0 22px"
-    },
-    sub: { color: "#9A9088", fontSize: 17, maxWidth: 500, margin: "0 auto 40px", lineHeight: 1.7 },
-    startBtn: {
-      background: "#B8935A", color: "#fff", border: "none", padding: "17px 44px",
-      borderRadius: 50, fontSize: 15, fontWeight: 600, cursor: "pointer",
-      letterSpacing: 0.3, fontFamily: "'DM Sans', sans-serif",
-      boxShadow: "0 8px 30px rgba(184,147,90,0.35)", transition: "all 0.2s"
-    },
-    features: { marginTop: 50, display: "flex", justifyContent: "center", gap: 48, flexWrap: "wrap" },
-    featTitle: { color: "#fff", fontSize: 13, fontWeight: 600 },
-    featSub: { color: "#5A5450", fontSize: 12, marginTop: 3 },
-    container: { padding: "32px 16px 80px", maxWidth: 760, margin: "0 auto" },
-    progress: { display: "flex", gap: 6, justifyContent: "center", marginBottom: 32 },
-    dot: (active, done) => ({
-      height: 6, borderRadius: 3,
-      width: done ? 20 : active ? 32 : 6,
-      background: done ? "#B8935A" : active ? "#1C1C1C" : "#D8D2CC",
-      transition: "all 0.35s ease"
-    }),
-    card: {
-      background: "#fff", borderRadius: 20, padding: "40px 36px",
-      boxShadow: "0 2px 30px rgba(0,0,0,0.06)", border: "1px solid #F0EDE8"
-    },
-    stepTitle: { fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 600, marginBottom: 6, color: "#1A1814" },
-    stepSub: { color: "#9A9088", fontSize: 14, marginBottom: 30, lineHeight: 1.6 },
-    label: { fontSize: 12, fontWeight: 600, color: "#666", marginBottom: 10, display: "block", letterSpacing: 0.8, textTransform: "uppercase" },
-    section: { marginBottom: 30 },
-    grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
-    grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 },
-    grid4: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10 },
-    liveEstimate: {
-      background: "linear-gradient(135deg, #F8F4EE, #FDF7EF)", borderRadius: 12,
-      padding: "16px 24px", display: "flex", justifyContent: "space-between",
-      alignItems: "center", marginTop: 4, border: "1px solid #EDE5D8"
-    },
-    btnRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 36 },
-    nextBtn: (enabled) => ({
-      background: enabled ? "#1A1814" : "#CCC", color: "#fff", border: "none",
-      padding: "15px 34px", borderRadius: 50, fontSize: 14, fontWeight: 600,
-      cursor: enabled ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif",
-      transition: "all 0.2s", letterSpacing: 0.2
-    }),
-    backBtn: {
-      background: "transparent", color: "#9A9088", border: "1px solid #E0DBD5",
-      padding: "15px 24px", borderRadius: 50, fontSize: 14, cursor: "pointer",
-      fontFamily: "'DM Sans', sans-serif"
-    },
-    uploadZone: (dragging, hasPhoto) => ({
-      border: `2px dashed ${dragging ? "#B8935A" : hasPhoto ? "#B8935A" : "#DDD8D0"}`,
-      borderRadius: 16, padding: 48, textAlign: "center",
-      background: dragging ? "#FDF7EF" : hasPhoto ? "#FDF7EF" : "#FAFAF8",
-      cursor: hasPhoto ? "default" : "pointer", transition: "all 0.2s",
-      minHeight: 220, display: "flex", alignItems: "center",
-      justifyContent: "center", flexDirection: "column", gap: 10
-    }),
-    estimateBox: {
-      background: "linear-gradient(145deg, #1A1814 0%, #2D2822 100%)",
-      borderRadius: 18, padding: "36px 32px", textAlign: "center", marginBottom: 28
-    },
-    estLabel: { color: "#B8935A", fontSize: 11, letterSpacing: 5, textTransform: "uppercase", marginBottom: 10 },
-    estNum: { fontFamily: "'Cormorant Garamond', serif", fontSize: 52, color: "#fff", fontWeight: 600, lineHeight: 1 },
-    estNote: { color: "#6A6260", fontSize: 12, marginTop: 12, lineHeight: 1.5 },
-    pill: (color) => ({
-      display: "inline-block", padding: "5px 16px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-      background: color === "green" ? "#E8F5E9" : "#FFF3E0",
-      color: color === "green" ? "#2E7D32" : "#BF5A00", marginBottom: 18
-    }),
-    inputField: {
-      width: "100%", padding: "13px 16px", border: "1px solid #E0DBD5",
-      borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif",
-      background: "#FAFAF8", outline: "none", color: "#1A1814"
-    },
-    textarea: {
-      width: "100%", padding: "13px 16px", border: "1px solid #E0DBD5",
-      borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif",
-      background: "#FAFAF8", outline: "none", color: "#1A1814",
-      minHeight: 90, resize: "vertical"
-    },
-    submitBtn: {
-      width: "100%", background: "#B8935A", color: "#fff", border: "none",
-      padding: "18px", borderRadius: 12, fontSize: 15, fontWeight: 600,
-      cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginTop: 10,
-      boxShadow: "0 6px 24px rgba(184,147,90,0.3)", letterSpacing: 0.3
-    },
-    footer: { textAlign: "center", padding: "24px", color: "#C0B8B0", fontSize: 11, letterSpacing: 2 }
-  };
-
-  // Duplicate submission screen
-  if (duplicate) return (
-    <div style={s.wrap}>
-      <div style={{ ...s.hero, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-        <div style={s.glow} />
-        <div style={s.glow2} />
-        <div style={{ fontSize: 48, marginBottom: 28, color: "#B8935A" }}>✦</div>
-        <div style={s.logoLine}>3D Cabinetry · Boise, Idaho</div>
-        <h1 style={{ ...s.h1, fontSize: "clamp(28px, 5vw, 48px)" }}>Already On Our List</h1>
-        <p style={s.sub}>Thank you for submitting your inquiry — we already have you in our system and look forward to connecting with you soon.</p>
-        <div style={{ marginTop: 16, padding: "12px 28px", border: "1px solid #3A3530", borderRadius: 50, color: "#6A6260", fontSize: 12, letterSpacing: 2 }}>
-          CUSTOM CABINETRY · KITCHEN REMODELING · BOISE, ID
-        </div>
-      </div>
-    </div>
-  );
-
-  // Thank you screen
-  if (submitted) return (
-    <div style={s.wrap}>
-      <div style={{ ...s.hero, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-        <div style={s.glow} />
-        <div style={s.glow2} />
-        <div style={{ fontSize: 48, marginBottom: 28, color: "#B8935A" }}>✦</div>
-        <div style={s.logoLine}>3D Cabinetry · Boise, Idaho</div>
-        <h1 style={{ ...s.h1, fontSize: "clamp(32px, 5vw, 52px)" }}>We've Got Your Details</h1>
-        <p style={s.sub}>Our team will review your project and reach out within 1 business day to schedule your free consultation.</p>
-        <a href="https://3dcabinetry.com" style={{
-          display: "inline-block", marginTop: 28, background: "#B8935A", color: "#fff",
-          padding: "15px 38px", borderRadius: 50, fontSize: 14, fontWeight: 600,
-          textDecoration: "none", fontFamily: "'DM Sans', sans-serif",
-          boxShadow: "0 6px 24px rgba(184,147,90,0.35)", letterSpacing: 0.3
-        }}>
-          Return to Homepage
-        </a>
-        <div style={{ marginTop: 24, padding: "12px 28px", border: "1px solid #3A3530", borderRadius: 50, color: "#6A6260", fontSize: 12, letterSpacing: 2 }}>
-          CUSTOM CABINETRY · KITCHEN REMODELING · BOISE, ID
-        </div>
-      </div>
-    </div>
-  );
+  if (submitted) return <CompletionScreen />;
 
   return (
-    <div style={s.wrap}>
+    <div className="estimator-page">
+      <header className="estimator-hero">
+        <div className="hero-glow" />
+        <div className="hero-content">
+          <div className="brand-line">3D Cabinetry · Boise, Idaho</div>
+          <h1>Plan your kitchen.<br />See the range as you go.</h1>
+          <p>Make a few practical selections and get a rough project range in about two minutes—no phone call required.</p>
+          <a className="hero-button" href="#estimate-builder">Build my estimate</a>
+          <div className="hero-trust">
+            <span>Free planning range</span>
+            <span>No obligation</span>
+            <span>Local Boise team</span>
+          </div>
+        </div>
+      </header>
 
-      {/* ── HERO ── */}
-      {step === 0 && (
-        <div style={s.hero}>
-          <div style={s.glow} />
-          <div style={s.glow2} />
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={s.logoLine}>3D Cabinetry · Boise, Idaho</div>
-            <h1 style={s.h1}>Design Your Dream<br />Kitchen. Instantly.</h1>
-            <p style={s.sub}>Upload a photo, make your selections, and get a rough estimate in minutes — no phone call, no pressure.</p>
-            <button style={s.startBtn} onClick={() => setStep(1)}>
-              Start Your Free Estimate →
-            </button>
-            <div style={s.features}>
-              {[
-                ["📐", "Custom Cabinetry", "Built to your exact specs"],
-                ["⚡", "Instant Estimate", "Know your budget upfront"],
-                ["🏆", "Boise's Best", "Premium woodcraft since day one"],
-              ].map(([icon, title, desc]) => (
-                <div key={title} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 22, marginBottom: 8 }}>{icon}</div>
-                  <div style={s.featTitle}>{title}</div>
-                  <div style={s.featSub}>{desc}</div>
+      <main id="estimate-builder" className="estimator-shell">
+        <form className="estimator-form" onSubmit={handleSubmit}>
+          <div className="form-intro">
+            <p className="section-eyebrow">Kitchen estimate builder</p>
+            <h2>Build a rough project range.</h2>
+            <p>Your estimate updates as you make selections. Choose the closest answer—we’ll confirm the details together later.</p>
+          </div>
+
+          {SECTIONS.map((section, index) => (
+            <section className="form-section" key={section.eyebrow}>
+              <div className="section-number">0{index + 1}</div>
+              <div className="section-heading">
+                <p className="section-eyebrow">{section.eyebrow}</p>
+                <h3>{section.title}</h3>
+                <p>{section.description}</p>
+              </div>
+              <div className="field-grid">
+                {section.fields.map((field) => (
+                  <SelectField key={field.key} field={field} value={form[field.key]} onChange={set} />
+                ))}
+              </div>
+            </section>
+          ))}
+
+          <section className={`form-section contact-section ${qualified ? "is-ready" : ""}`}>
+            <div className="section-number">04</div>
+            <div className="section-heading">
+              <p className="section-eyebrow">Your project details</p>
+              <h3>{qualified ? "Where should we send your estimate?" : "Complete the selections above"}</h3>
+              <p>{qualified
+                ? "Share your contact details and we’ll follow up within one business day."
+                : "Once all eight selections are complete, your planning range and contact form will be ready."}</p>
+            </div>
+
+            {qualified && (
+              <div className="contact-fields">
+                <div className="field-grid">
+                  <label className="text-field">
+                    <span>First name *</span>
+                    <input value={form.firstName} onChange={(event) => set("firstName", event.target.value)} placeholder="First name" autoComplete="given-name" required />
+                  </label>
+                  <label className="text-field">
+                    <span>Last name</span>
+                    <input value={form.lastName} onChange={(event) => set("lastName", event.target.value)} placeholder="Last name" autoComplete="family-name" />
+                  </label>
+                  <label className="text-field">
+                    <span>Email address *</span>
+                    <input type="email" value={form.email} onChange={(event) => set("email", event.target.value)} placeholder="you@email.com" autoComplete="email" required />
+                  </label>
+                  <label className="text-field">
+                    <span>Phone number</span>
+                    <input type="tel" value={form.phone} onChange={(event) => set("phone", event.target.value)} placeholder="(208) 555-0100" autoComplete="tel" />
+                  </label>
+                </div>
+                <label className="text-field notes-field">
+                  <span>Anything else we should know?</span>
+                  <textarea value={form.notes} onChange={(event) => set("notes", event.target.value)} placeholder="Island, appliances, timeline, special requests…" />
+                </label>
+
+                {submitError && <p className="submit-error">{submitError}</p>}
+                <button className="submit-button" type="submit" disabled={!canSubmit}>
+                  {submitting ? "Submitting…" : "Send my project details"}
+                </button>
+                <p className="privacy-note">Your information stays private. No spam, ever.</p>
+              </div>
+            )}
+
+            {selectionsComplete && !qualified && (
+              <div className="referral-card">
+                <p className="referral-label">Below our typical project minimum</p>
+                <h4>We may not be the best fit for this project.</h4>
+                <p>Our custom cabinetry projects typically begin around $10,000. For smaller projects, we recommend Noah Kramer at Bird Dog Property Maintenance & Remodel.</p>
+                <div className="referral-actions">
+                  <a href="tel:+12089172922">Call Noah</a>
+                  <a className="secondary" href="mailto:Noah@BirdDogPMR.com">Email Noah</a>
+                </div>
+              </div>
+            )}
+          </section>
+        </form>
+
+        <aside className="estimate-rail" aria-live="polite">
+          <div className="estimate-card">
+            <p className="estimate-kicker">Your running estimate</p>
+            {completedCount > 0 ? (
+              <>
+                <div className="estimate-range">{estimateRange(estimate)}</div>
+                <p className="estimate-caption">Planning range based on your current selections.</p>
+              </>
+            ) : (
+              <>
+                <div className="estimate-placeholder">Start with your kitchen size</div>
+                <p className="estimate-caption">Your range will appear here and update as you go.</p>
+              </>
+            )}
+
+            <div className="completion-row">
+              <span>{completedCount} of {ESTIMATE_FIELDS.length} selections</span>
+              <span>{Math.round((completedCount / ESTIMATE_FIELDS.length) * 100)}%</span>
+            </div>
+            <div className="completion-track">
+              <span style={{ width: `${(completedCount / ESTIMATE_FIELDS.length) * 100}%` }} />
+            </div>
+
+            <div className="estimate-summary">
+              {SECTIONS.map((section) => (
+                <div key={section.eyebrow}>
+                  <span>{section.eyebrow}</span>
+                  <strong>{section.fields.filter((field) => form[field.key]).length}/{section.fields.length}</strong>
                 </div>
               ))}
             </div>
+
+            <p className="estimate-disclaimer">This is a rough planning range, not a quote. Final pricing requires scope confirmation and an in-home consultation.</p>
           </div>
-        </div>
-      )}
+        </aside>
+      </main>
 
-      {/* ── STEPS 1–4 ── */}
-      {step >= 1 && step <= 4 && (
-        <div style={s.container}>
-          <div style={s.progress}>
-            {[1,2,3,4,5].map(i => (
-              <div key={i} style={s.dot(step === i, step > i)} />
-            ))}
-          </div>
-
-          <div style={s.card}>
-
-            {/* Step 1: Photo Upload */}
-            {step === 1 && (
-              <>
-                <div style={s.stepTitle}>Upload Your Kitchen Photo</div>
-                <div style={s.stepSub}>Optional: upload a photo of your current kitchen so we can better understand your space. You can also skip this step and continue to your rough estimate.</div>
-                <div
-                  style={s.uploadZone(dragging, !!photo)}
-                  onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={handleDrop}
-                  onClick={() => !photo && fileRef.current.click()}
-                >
-                  {photo ? (
-                    <>
-                      <img src={photo} alt="Your kitchen" style={{ maxHeight: 240, maxWidth: "100%", borderRadius: 10, objectFit: "cover" }} />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
-                        style={{ ...s.backBtn, fontSize: 12, padding: "8px 18px", marginTop: 8 }}>
-                        Remove & re-upload
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 44 }}>📷</div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: "#333" }}>Drag & drop your kitchen photo</div>
-                      <div style={{ color: "#9A9088", fontSize: 13 }}>or click to browse · JPG, PNG, HEIC accepted</div>
-                    </>
-                  )}
-                  <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
-                </div>
-                <div style={s.btnRow}>
-                  <button style={s.backBtn} onClick={() => setStep(0)}>← Back</button>
-                  <button style={s.nextBtn(canNext())} disabled={!canNext()} onClick={() => setStep(2)}>{photo ? "Continue →" : "Skip & Continue →"}</button>
-                </div>
-              </>
-            )}
-
-            {/* Step 2: Project Scope */}
-            {step === 2 && (
-              <>
-                <div style={s.stepTitle}>Project Scope</div>
-                <div style={s.stepSub}>Tell us about the scale and type of your remodel.</div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Kitchen Size</span>
-                  <div style={s.grid2}>
-                    {[
-                      ["small", "Small", "Under 100 sq ft", "🏠"],
-                      ["medium", "Medium", "100–200 sq ft", "🏡"],
-                      ["large", "Large", "200–300 sq ft", "🏘️"],
-                      ["open", "Open Concept", "300+ sq ft", "🏛️"],
-                    ].map(([v, l, d, icon]) => (
-                      <SelectCard key={v} field="size" value={v} label={l} sub={d} icon={icon} />
-                    ))}
-                  </div>
-                </div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Project Type</span>
-                  <div style={s.grid2}>
-                    {[
-                      ["full", "Full Kitchen Remodel", "Complete transformation"],
-                      ["refresh", "Cabinet Refresh", "New doors & finishes only"],
-                      ["modernize", "New Functionality", "Storage & layout upgrades"],
-                      ["layout", "Layout Change", "Structural redesign"],
-                    ].map(([v, l, d]) => (
-                      <SelectCard key={v} field="type" value={v} label={l} sub={d} />
-                    ))}
-                  </div>
-                </div>
-
-                {form.size && form.type && (
-                  <div style={s.liveEstimate}>
-                    <span style={{ fontSize: 13, color: "#9A9088" }}>Starting estimate</span>
-                    <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 600 }}>{fmt(estimate())}</span>
-                  </div>
-                )}
-
-                <div style={s.btnRow}>
-                  <button style={s.backBtn} onClick={() => setStep(1)}>← Back</button>
-                  <button style={s.nextBtn(canNext())} disabled={!canNext()} onClick={() => setStep(3)}>Continue →</button>
-                </div>
-              </>
-            )}
-
-            {/* Step 3: Design */}
-            {step === 3 && (
-              <>
-                <div style={s.stepTitle}>Design Preferences</div>
-                <div style={s.stepSub}>Pick the aesthetic direction that fits your vision.</div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Design Style</span>
-                  <div style={s.grid3}>
-                    {[
-                      ["modern", "Modern", "🖤"],
-                      ["contemporary", "Contemporary", "⬜"],
-                      ["transitional", "Transitional", "🔲"],
-                      ["traditional", "Traditional", "🪵"],
-                      ["farmhouse", "Farmhouse", "🌾"],
-                    ].map(([v, l, icon]) => (
-                      <SelectCard key={v} field="style" value={v} label={l} icon={icon} />
-                    ))}
-                  </div>
-                </div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Cabinet Door Style</span>
-                  <div style={s.grid3}>
-                    {[
-                      ["shaker", "Shaker", "🚪"],
-                      ["flat", "Flat Panel / Slab", "◻"],
-                      ["raised", "Raised Panel", "🔳"],
-                      ["glass", "Glass Front", "🪟"],
-                      ["open", "Open Shelving", "📚"],
-                    ].map(([v, l, icon]) => (
-                      <SelectCard key={v} field="door" value={v} label={l} icon={icon} />
-                    ))}
-                  </div>
-                </div>
-
-                {form.style && form.door && (
-                  <div style={s.liveEstimate}>
-                    <span style={{ fontSize: 13, color: "#9A9088" }}>Running estimate</span>
-                    <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 600 }}>{fmt(estimate())}</span>
-                  </div>
-                )}
-
-                <div style={s.btnRow}>
-                  <button style={s.backBtn} onClick={() => setStep(2)}>← Back</button>
-                  <button style={s.nextBtn(canNext())} disabled={!canNext()} onClick={() => setStep(4)}>Continue →</button>
-                </div>
-              </>
-            )}
-
-            {/* Step 4: Materials */}
-            {step === 4 && (
-              <>
-                <div style={s.stepTitle}>Materials & Finishes</div>
-                <div style={s.stepSub}>These selections significantly shape both the look and cost of your kitchen.</div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Cabinet Box Material</span>
-                  <div style={s.grid2}>
-                    {[
-                      ["plywood", "Plywood", "Best durability & moisture resistance"],
-                      ["solid", "Solid Wood", "Premium, heirloom quality"],
-                      ["mdf", "MDF", "Smooth finish, budget-friendly"],
-                      ["particleboard", "Particleboard", "Most affordable option"],
-                    ].map(([v, l, d]) => (
-                      <SelectCard key={v} field="box" value={v} label={l} sub={d} />
-                    ))}
-                  </div>
-                </div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Finish Type</span>
-                  <div style={s.grid3}>
-                    {[
-                      ["painted", "Painted"],
-                      ["stained", "Stained"],
-                      ["natural", "Natural Wood"],
-                      ["thermofoil", "Thermofoil"],
-                      ["twotone", "Two-Tone"],
-                    ].map(([v, l]) => (
-                      <SelectCard key={v} field="finish" value={v} label={l} />
-                    ))}
-                  </div>
-                </div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Hardware Style</span>
-                  <div style={s.grid3}>
-                    {[
-                      ["minimal", "Minimal / Integrated"],
-                      ["bar", "Bar Pulls"],
-                      ["cup", "Cup Pulls"],
-                      ["knobs", "Knobs"],
-                      ["mixed", "Mixed"],
-                    ].map(([v, l]) => (
-                      <SelectCard key={v} field="hardware" value={v} label={l} />
-                    ))}
-                  </div>
-                </div>
-
-                <div style={s.section}>
-                  <span style={s.label}>Flooring</span>
-                  <div style={s.grid3}>
-                    {[
-                      ["existing", "Keep Existing"],
-                      ["lvp", "LVP"],
-                      ["tile", "Tile"],
-                      ["hardwood", "Hardwood"],
-                      ["laminate", "Laminate"],
-                    ].map(([v, l]) => (
-                      <SelectCard key={v} field="flooring" value={v} label={l} />
-                    ))}
-                  </div>
-                </div>
-
-                <div style={s.btnRow}>
-                  <button style={s.backBtn} onClick={() => setStep(3)}>← Back</button>
-                  <button style={s.nextBtn(canNext())} disabled={!canNext()} onClick={() => setStep(5)}>
-                    See My Estimate →
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── STEP 5: ESTIMATE + LEAD CAPTURE ── */}
-      {step === 5 && (
-        <div style={s.container}>
-          <div style={s.progress}>
-            {[1,2,3,4,5].map(i => (
-              <div key={i} style={s.dot(false, true)} />
-            ))}
-          </div>
-
-          <div style={s.card}>
-            <div style={s.estimateBox}>
-              <div style={s.estLabel}>Your Rough Estimate</div>
-              <div style={s.estNum}>{range()}</div>
-              <div style={s.estNote}>
-                Based on your selections · Final pricing requires a free in-home consultation<br />
-                Estimate reflects materials, labor, and installation
-              </div>
-            </div>
-
-            {qualified ? (
-              <>
-                <div style={{ textAlign: "center", marginBottom: 28 }}>
-                  <span style={s.pill("green")}>✓ Great fit for 3D Carpentry</span>
-                  <p style={{ color: "#555", fontSize: 14, lineHeight: 1.75, maxWidth: 460, margin: "0 auto" }}>
-                    Your project aligns perfectly with our work. Enter your details below and we'll reach out within 1 business day to schedule your free consultation.
-                  </p>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  <div style={s.grid2}>
-                    <div>
-                      <label style={s.label}>First Name *</label>
-                      <input style={s.inputField} value={form.firstName} onChange={e => set("firstName", e.target.value)} placeholder="Jason" />
-                    </div>
-                    <div>
-                      <label style={s.label}>Last Name *</label>
-                      <input style={s.inputField} value={form.lastName} onChange={e => set("lastName", e.target.value)} placeholder="Smith" />
-                    </div>
-                  </div>
-                  <div>
-                    <label style={s.label}>Email Address *</label>
-                    <input style={s.inputField} type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="jason@email.com" />
-                  </div>
-                  <div>
-                    <label style={s.label}>Phone Number</label>
-                    <input style={s.inputField} type="tel" value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="(208) 555-0100" />
-                  </div>
-                  <div>
-                    <label style={s.label}>Anything else we should know?</label>
-                    <textarea style={s.textarea} value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Islands, appliances, special requests, timeline..." />
-                  </div>
-
-                  {submitError && (
-                    <p style={{ color: "#C0392B", fontSize: 13, textAlign: "center", padding: "8px", background: "#FEF0EE", borderRadius: 8 }}>
-                      {submitError}
-                    </p>
-                  )}
-                  <button
-                    style={{ ...s.submitBtn, opacity: submitting ? 0.7 : 1 }}
-                    disabled={!form.firstName || !form.email || submitting}
-                    onClick={handleSubmit}>
-                    {submitting ? "Submitting..." : "Submit My Project Details →"}
-                  </button>
-                  <p style={{ fontSize: 11, color: "#B0A898", textAlign: "center", marginTop: 4 }}>
-                    We never share your information. No spam, ever.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <div style={{ background: "#FFF8F0", border: "1px solid #F0DEC0", borderRadius: 16, padding: "36px 32px", textAlign: "center" }}>
-                <span style={s.pill("orange")}>Below Our Minimum Project Size</span>
-                <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, marginBottom: 14, color: "#1A1814" }}>
-                  We May Not Be the Best Fit
-                </h3>
-                <p style={{ color: "#666", fontSize: 14, lineHeight: 1.75, marginBottom: 28 }}>
-                  Our custom cabinetry projects typically start at $10,000. For smaller budgets, we recommend reaching out to our trusted local partner — Noah Kramer at Bird Dog Property Maintenance and Remodel. He does great work and may be exactly what you need.
-                </p>
-                <div style={{ background: "#fff", border: "1px solid #E8D8C0", borderRadius: 14, padding: "24px 28px", marginBottom: 24, textAlign: "left" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#F8F0E4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🐦</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 15, color: "#1A1814" }}>Noah Kramer</div>
-                      <div style={{ fontSize: 13, color: "#B8935A", fontWeight: 500 }}>Bird Dog Property Maintenance & Remodel</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <a href="tel:+12089172922" style={{
-                      flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      background: "#1A1814", color: "#fff", padding: "13px 20px", borderRadius: 50,
-                      textDecoration: "none", fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif"
-                    }}>
-                      📞 Call Noah
-                    </a>
-                    <a href="mailto:Noah@BirdDogPMR.com" style={{
-                      flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      background: "#fff", color: "#1A1814", padding: "13px 20px", borderRadius: 50,
-                      textDecoration: "none", fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-                      border: "1px solid #E0DBD5"
-                    }}>
-                      ✉️ Email Noah
-                    </a>
-                  </div>
-                </div>
-                <button style={s.backBtn} onClick={() => setStep(2)}>← Adjust My Selections</button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {step > 0 && (
-        <div style={s.footer}>
-          3D CABINETRY · BOISE, IDAHO · CUSTOM CABINETRY & WOODWORK
-        </div>
-      )}
+      <footer>3D CABINETRY · BOISE, IDAHO · CUSTOM CABINETRY & WOODWORK</footer>
     </div>
   );
 }
