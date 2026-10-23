@@ -1,3 +1,4 @@
+import { analytics } from "./lib/analytics.mjs";
 import { useMemo, useState } from "react";
 
 const PRICING = {
@@ -212,7 +213,8 @@ export default function App() {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Submission failed");
+      if (!response.ok || data.success !== true) throw new Error(data.error || "Submission failed");
+      analytics?.event("estimator_complete", "residential_estimator");
       setSubmitted(true);
     } catch {
       setSubmitError("Something went wrong. Please try again or call us directly.");
