@@ -1,3 +1,4 @@
+import { AnalyticsChoices } from "./components/AnalyticsConsent.jsx";
 import { analytics } from "./lib/analytics.mjs";
 import { useMemo, useState } from "react";
 
@@ -138,6 +139,7 @@ function estimateRange(total) {
 
 function CompletionScreen() {
   return (
+    <>
     <main className="completion-screen">
       <div className="completion-glow" />
       <div className="brand-line">3D Cabinetry · Boise, Idaho</div>
@@ -145,6 +147,8 @@ function CompletionScreen() {
       <p>Thank you for sharing your project. Our team will review your selections and contact you about next steps.</p>
       <a href="https://3dcabinetry.com">Return to 3D Cabinetry</a>
     </main>
+    <footer><AnalyticsChoices /></footer>
+    </>
   );
 }
 
@@ -364,7 +368,7 @@ export default function App() {
         </aside>
       </main>
 
-      <footer>3D CABINETRY · BOISE, IDAHO · CUSTOM CABINETRY & WOODWORK</footer>
+      <footer>3D CABINETRY · BOISE, IDAHO · CUSTOM CABINETRY & WOODWORK<br /><AnalyticsChoices /></footer>
     </div>
   );
 }
