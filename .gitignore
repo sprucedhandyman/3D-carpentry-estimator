@@ -1,3 +1,8 @@
 node_modules/
 dist/
 .DS_Store
+
+.env*
+
+# Only this public browser configuration is versioned.
+!.env.production

@@ -1,16 +1,16 @@
 # GA4 release preparation — October 23, 2026
 
-Tracking is prepared but **inactive**. No measurement ID is configured. No GA4 property was created by this task and no live collection was verified.
+Public measurement ID **G-VDFCLT1SDT**, supplied by Jason from his Google tag installation screen, is configured in the tracked `.env.production` for Vite production-mode builds. This is public browser configuration, not a secret. Production has not been published by this task. Preview/local host exclusions and explicit consent remain in force; no live collection has been verified.
 
 ## Coordinated Google setup
 
-The earlier analytics task owns Chrome Analytics tab 657822369 in session 01a168c9-a44c-71e2-9f00-1ce1a1f29022. Parent reports business-account reauthentication for jason@3dcabinetry.com is pending user action. Do not bypass tab ownership or independently create a duplicate property.
+Jason created GA4 himself and supplied measurement ID G-VDFCLT1SDT. This implementation task did not create an account/property, accept terms, add OAuth grants or modify Google Analytics settings. The parent/owning task handles verification of the account, property, stream, America/Boise timezone, USD currency and minimal data settings. Do not create a duplicate property.
 
-After authorized sign-in, check all accessible existing accounts/properties first. If none exist, use 3D Cabinetry, America/Boise (Mountain time) and USD. Stop before accepting any explicit terms agreement or granting new security access; return the exact agreement/permission for approval. Do not enable Google Signals, advertising personalization, user-provided data collection, ad integrations or unrelated account data sharing. Choose minimal retention and leave optional sharing disabled.
+Before production publication, verify the existing stream has **enhanced measurement turned off**, including history page views, form interactions, outbound links, downloads and search. Do not enable Google Signals, advertising personalization, user-provided data collection, ad integrations or unrelated data sharing. Review retention and leave optional sharing disabled. No additional terms acceptance is required merely to use the supplied public ID; any new explicit agreement or security grant must still be handled separately.
 
-Create/configure a web stream covering www.3dcabinetry.com and estimate.3dcabinetry.com. **Turn off enhanced measurement**, including history page views, form interactions, outbound links, downloads and search, before enabling this integration. The application manually sends sanitized page views and successful submissions. Configure the same public measurement ID in the two projects only after confirming those property settings. Public measurement IDs are not secrets.
+Both repositories version only `VITE_GA4_MEASUREMENT_ID=G-VDFCLT1SDT` in `.env.production`. Vite loads it during `npm run build`, including PR preview builds. The runtime hostname allowlist independently prevents collection on localhost and Vercel preview domains even though the public ID exists in their bundles. Other `.env*` files remain ignored; never put secrets in this tracked file. Existing build-environment values can override the file, so verify the actual generated bundle.
 
-Set `VITE_GA4_MEASUREMENT_ID=G-…` in the appropriate build environment. Keep review/preview environments unconfigured. Host allowlisting additionally blocks collection on localhost and Vercel preview hosts. Changing the public build value requires a new build; do not publish production without Jason's separate approval.
+The configuration will become eligible to collect only after a separately approved production publication, on an allowlisted public route, and after explicit browser consent. Do not publish while property/settings verification is incomplete. No production environment variables or deployments were changed by this configuration commit.
 
 ## Event contract
 
