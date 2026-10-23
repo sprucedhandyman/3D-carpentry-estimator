@@ -1,10 +1,37 @@
 // Deliberately no form data, link text, query strings, fragments or customer routes.
 export const CONSENT_KEY = '3d-analytics-consent';
 const hosts = new Set(['www.3dcabinetry.com', '3dcabinetry.com', 'estimate.3dcabinetry.com']);
-const publicPath = /^\/$|^\/(?:services\/(?:custom-cabinetry|kitchen-remodels|bathroom-vanities|built-ins|custom-doors|closets-storage|commercial-cabinetry)|commercial-capabilities|request-a-bid|privacy|blog(?:\/[a-z0-9-]+)?)\/?$/;
+const publicPaths = new Set([
+  "/",
+  "/privacy",
+  "/commercial-capabilities",
+  "/request-a-bid",
+  "/blog",
+  "/services/custom-cabinetry",
+  "/services/kitchen-remodels",
+  "/services/bathroom-vanities",
+  "/services/built-ins",
+  "/services/custom-doors",
+  "/services/closets-storage",
+  "/services/commercial-cabinetry",
+  "/blog/cabinet-door-styles-guide",
+  "/blog/cabinet-storage-decisions-before-kitchen-remodel",
+  "/blog/cnc-nesting-cabinet-parts-cut-sequencing",
+  "/blog/cnc-slotted-millwork-panels",
+  "/blog/commercial-break-room-casework-coordination",
+  "/blog/commercial-casework-edgebanding",
+  "/blog/historic-exterior-trim-restoration-commercial-boise",
+  "/blog/how-custom-cabinets-are-built-boise-shop",
+  "/blog/kitchen-remodel-cost-breakdown-boise",
+  "/blog/plywood-vs-mdf-vs-particleboard-cabinet-boxes",
+  "/blog/tying-walls-into-existing-ceiling-grid-commercial-boise",
+  "/blog/what-a-full-kitchen-remodel-involves"
+]);
 export function safePage(location) {
-  if (!hosts.has(location.hostname) || !publicPath.test(location.pathname)) return null;
-  return `https://${location.hostname}${location.pathname.replace(/\/+$/, '') || '/'}`;
+  const path = location.pathname.replace(/\/+$/, '') || '/';
+  if (!hosts.has(location.hostname) || !publicPaths.has(path)) return null;
+  if (location.hostname === 'estimate.3dcabinetry.com' && path !== '/') return null;
+  return `https://${location.hostname}${path}`;
 }
 export function createAnalytics({ win, doc, measurementId }) {
   let active = false;

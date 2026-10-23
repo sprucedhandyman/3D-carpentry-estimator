@@ -18,7 +18,7 @@ test('only explicit consent enables a single sanitized page view, including repe
  const config=commands().find(c=>c[0]==='config')[2];assert.equal(config.send_page_view,false);assert.equal(config.allow_google_signals,false);assert.equal(config.allow_ad_personalization_signals,false);
 });
 test('portal and preview hosts never load Google even with stored consent',()=>{
- for(const opts of [{path:'/projects/wolcott-attic'},{host:'preview.vercel.app'},{host:'localhost'}]) {const {api,scripts}=setup({...opts,choice:'granted'});api.start();assert.equal(scripts.length,0);}
+ for(const opts of [{path:'/projects/wolcott-attic'},{path:'/blog/private-customer-name'},{host:'preview.vercel.app'},{host:'localhost'}]) {const {api,scripts}=setup({...opts,choice:'granted'});api.start();assert.equal(scripts.length,0);}
 });
 test('events accept fixed type values only and drop arbitrary form fields',()=>{
  const {api,commands}=setup({choice:'granted'});api.start();api.event('generate_lead','website_contact',{email:'private@example.com'});api.event('telephone_click','telephone_link');api.event('unknown','website_contact');api.event('generate_lead','customer notes');
