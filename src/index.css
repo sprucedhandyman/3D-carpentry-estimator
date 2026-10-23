@@ -614,3 +614,9 @@ footer {
     flex-direction: column;
   }
 }
+
+.privacy-choice { position: fixed; bottom: 10px; left: 10px; z-index: 190; padding: 8px 12px; background: #1A1814; color: #F8F6F3; border: 1px solid #B8935A; border-radius: 6px; cursor: pointer; font: 12px 'DM Sans', sans-serif; }
+.analytics-consent { position: fixed; bottom: 48px; left: 16px; right: 16px; z-index: 190; margin: 0 auto; max-width: 660px; padding: 22px; background: #F8F6F3; color: #1A1814; border: 1px solid #B8935A; border-radius: 10px; box-shadow: 0 8px 40px #0006; font: 14px/1.65 'DM Sans', sans-serif; }
+.analytics-consent a { text-decoration: underline; }
+.analytics-consent div { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.analytics-consent button { padding: 10px 18px; background: #1A1814; color: #F8F6F3; border: 0; border-radius: 6px; cursor: pointer; font: inherit; }

@@ -1,3 +1,4 @@
+import { analytics } from "./lib/analytics.mjs";
 import { useMemo, useState } from "react";
 
 const PRICING = {
@@ -141,7 +142,7 @@ function CompletionScreen() {
       <div className="completion-glow" />
       <div className="brand-line">3D Cabinetry · Boise, Idaho</div>
       <h1>We’ve got your details.</h1>
-      <p>Our team will review your selections and reach out within one business day to schedule your free consultation.</p>
+      <p>Thank you for sharing your project. Our team will review your selections and contact you about next steps.</p>
       <a href="https://3dcabinetry.com">Return to 3D Cabinetry</a>
     </main>
   );
@@ -212,7 +213,8 @@ export default function App() {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Submission failed");
+      if (!response.ok || data.success !== true) throw new Error(data.error || "Submission failed");
+      analytics?.event("estimator_complete", "residential_estimator");
       setSubmitted(true);
     } catch {
       setSubmitError("Something went wrong. Please try again or call us directly.");
@@ -270,7 +272,7 @@ export default function App() {
               <p className="section-eyebrow">Your project details</p>
               <h3>{qualified ? "Where should we send your estimate?" : "Complete the selections above"}</h3>
               <p>{qualified
-                ? "Share your contact details and we’ll follow up within one business day."
+                ? "Share your contact details so our team can review your project and discuss next steps."
                 : "Once all eight selections are complete, your planning range and contact form will be ready."}</p>
             </div>
 
